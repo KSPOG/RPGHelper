@@ -13,6 +13,7 @@ public class SettingsPanel extends JPanel {
     private final JTextField executablePathField = new JTextField();
     private final JCheckBox autoLaunchCheck = RPGHelperTheme.check("Launch Raid on app startup");
     private final JLabel statusLabel = new JLabel();
+    private final JLabel saveLocationLabel = new JLabel();
 
     public SettingsPanel(
             AppSettings settings,
@@ -44,7 +45,7 @@ public class SettingsPanel extends JPanel {
         panel.add(Box.createVerticalStrut(12));
 
         JTextArea description = new JTextArea(
-                "Set the Raid executable path, choose whether the game should launch when RPG Helper starts, and check whether the client is currently running."
+                "Set the Raid executable path, choose whether the game should launch when RPG Helper starts, and check whether the client is currently running. You can point this to the game .exe or to a Raid / Plarium install folder."
         );
         description.setWrapStyleWord(true);
         description.setLineWrap(true);
@@ -71,6 +72,13 @@ public class SettingsPanel extends JPanel {
         autoLaunchCheck.setSelected(settings.isAutoLaunchRaidOnStartup());
         panel.add(autoLaunchCheck);
         panel.add(Box.createVerticalStrut(16));
+
+        saveLocationLabel.setForeground(RPGHelperTheme.MUTED);
+        saveLocationLabel.setFont(RPGHelperTheme.SMALL);
+        saveLocationLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        saveLocationLabel.setText("Settings file: " + settingsStore.getSettingsFileLocation());
+        panel.add(saveLocationLabel);
+        panel.add(Box.createVerticalStrut(10));
 
         statusLabel.setForeground(RPGHelperTheme.TEXT);
         statusLabel.setFont(RPGHelperTheme.VALUE);
@@ -136,6 +144,6 @@ public class SettingsPanel extends JPanel {
     }
 
     public void refreshStatus() {
-        statusLabel.setText(raidClientService.describeStatus(settings));
+        statusLabel.setText(raidClientService.describeStatus(settings) + " " + raidClientService.describeConfiguredTarget(settings));
     }
 }
