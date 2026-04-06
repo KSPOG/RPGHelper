@@ -11,9 +11,18 @@ public class RPGHelperPrototype extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel screenContainer = new JPanel(cardLayout);
     private final Map<String, JButton> navigationButtons = new LinkedHashMap<>();
+    private final AppSettingsStore settingsStore = new AppSettingsStore();
+    private final AppSettings settings = settingsStore.load();
+    private final RaidClientService raidClientService = new RaidClientService();
     private final MutableMockGameResourceReader debugReader = new MutableMockGameResourceReader();
-    private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(debugReader);
+    private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(debugReader, settings, raidClientService);
     private final HomePanel homePanel = new HomePanel(resourceReader);
+    private final SettingsPanel settingsPanel = new SettingsPanel(settings, settingsStore, raidClientService, new SettingsChangeListener() {
+        @Override
+        public void onSettingsSaved(AppSettings updatedSettings) {
+            refreshDebugData();
+        }
+    });
     private final DebugHotfixFrame debugHotfixFrame = new DebugHotfixFrame(this, debugReader);
 
     public RPGHelperPrototype() {
@@ -34,6 +43,7 @@ public class RPGHelperPrototype extends JFrame {
         root.add(createBody(), BorderLayout.CENTER);
         root.add(createFooter(), BorderLayout.SOUTH);
 
+        launchRaidIfConfigured();
         registerDebugShortcut();
         showScreen("Home");
     }
@@ -45,7 +55,7 @@ public class RPGHelperPrototype extends JFrame {
         screenContainer.add(new ChampionUpgradesPanel(), "Champion Upgrades");
         screenContainer.add(new ForgePanel(), "Forge");
         screenContainer.add(new QuestsEventPanel(), "Quests / Event");
-        screenContainer.add(new SettingsPanel(), "Settings");
+        screenContainer.add(settingsPanel, "Settings");
     }
 
     private JComponent createHeader() {
@@ -158,7 +168,14 @@ public class RPGHelperPrototype extends JFrame {
 
     public void refreshDebugData() {
         homePanel.refreshResources();
+        settingsPanel.refreshStatus();
         repaint();
+    }
+
+    private void launchRaidIfConfigured() {
+        if (settings.isAutoLaunchRaidOnStartup() && !raidClientService.isRaidRunning()) {
+            raidClientService.launchRaid(settings);
+        }
     }
 
     private void registerDebugShortcut() {
