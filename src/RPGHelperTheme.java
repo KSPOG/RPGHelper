@@ -80,6 +80,27 @@ public final class RPGHelperTheme {
         combo.setForeground(TEXT);
         combo.setFont(LABEL);
         combo.setFocusable(false);
+        combo.setOpaque(true);
+        combo.setBorder(new CompoundBorder(
+                new LineBorder(new Color(72, 88, 118), 1, true),
+                new EmptyBorder(2, 6, 2, 6)
+        ));
+        combo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus
+            ) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                label.setBackground(isSelected ? brighten(PANEL, 0.15f) : PANEL);
+                label.setForeground(TEXT);
+                label.setBorder(new EmptyBorder(4, 8, 4, 8));
+                return label;
+            }
+        });
         return combo;
     }
 
@@ -214,25 +235,51 @@ public final class RPGHelperTheme {
     }
 
     public static JButton footerButton(String text) {
-        JButton button = new JButton(text);
+        ThemedButton button = new ThemedButton(text);
         button.setPreferredSize(new Dimension(42, 34));
-        button.setBackground(PANEL);
-        button.setForeground(TEXT);
-        button.setFocusPainted(false);
         button.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 18));
-        button.setBorder(new LineBorder(new Color(72, 88, 118), 1, true));
+        applyButtonStyle(button, PANEL, TEXT);
         return button;
     }
 
     public static void styleTab(JButton button, boolean active) {
-        button.setForeground(TEXT);
-        button.setBackground(active ? ACCENT : PANEL);
-        button.setFocusPainted(false);
         button.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        applyButtonStyle(button, active ? ACCENT : PANEL, TEXT);
         button.setBorder(new CompoundBorder(
-                new LineBorder(new Color(72, 88, 118), 1, true),
+                new LineBorder(active ? brighten(ACCENT, 0.2f) : new Color(72, 88, 118), 1, true),
                 new EmptyBorder(10, 18, 10, 18)
         ));
+    }
+
+    public static void stylePrimaryButton(JButton button) {
+        applyButtonStyle(button, ACCENT, Color.WHITE);
+        button.setBorder(new CompoundBorder(
+                new LineBorder(brighten(ACCENT, 0.15f), 1, true),
+                new EmptyBorder(10, 10, 10, 10)
+        ));
+    }
+
+    public static void styleSecondaryButton(JButton button) {
+        applyButtonStyle(button, PANEL, TEXT);
+        button.setBorder(new CompoundBorder(
+                new LineBorder(new Color(72, 88, 118), 1, true),
+                new EmptyBorder(8, 14, 8, 14)
+        ));
+    }
+
+    public static void applyButtonStyle(JButton button, Color background, Color foreground) {
+        button.setBackground(background);
+        button.setForeground(foreground);
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        if (button instanceof ThemedButton) {
+            ThemedButton themedButton = (ThemedButton) button;
+            themedButton.applyTheme(background, foreground, new Color(72, 88, 118), 12);
+        } else {
+            button.setOpaque(true);
+            button.setContentAreaFilled(true);
+            button.setBorderPainted(true);
+        }
     }
 
     public static JPanel createPlaceholderPanel(String title, String summary, String[] features) {

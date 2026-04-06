@@ -11,6 +11,7 @@ public class RPGHelperPrototype extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel screenContainer = new JPanel(cardLayout);
     private final Map<String, JButton> navigationButtons = new LinkedHashMap<>();
+    private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(new MockGameResourceReader());
 
     public RPGHelperPrototype() {
         setTitle("RPG Helper");
@@ -35,7 +36,7 @@ public class RPGHelperPrototype extends JFrame {
 
     private void registerScreens() {
         screenContainer.setOpaque(false);
-        screenContainer.add(new HomePanel(), "Home");
+        screenContainer.add(new HomePanel(resourceReader), "Home");
         screenContainer.add(new AutoFarmPanel(), "Auto-Farm");
         screenContainer.add(new ChampionUpgradesPanel(), "Champion Upgrades");
         screenContainer.add(new ForgePanel(), "Forge");
@@ -66,7 +67,7 @@ public class RPGHelperPrototype extends JFrame {
 
         String[] tabNames = {"Home", "Auto-Farm", "Champion Upgrades", "Forge", "Quests / Event", "Settings"};
         for (String tabName : tabNames) {
-            JButton button = new JButton(tabName);
+            JButton button = new ThemedButton(tabName);
             RPGHelperTheme.styleTab(button, "Home".equals(tabName));
             button.addActionListener(event -> showScreen(tabName));
             navigationButtons.put(tabName, button);
@@ -153,7 +154,7 @@ public class RPGHelperPrototype extends JFrame {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch (Exception ignored) {
         }
 

@@ -4,10 +4,18 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class HomePanel extends JPanel {
 
-    public HomePanel() {
+    private final GameResourceReader resourceReader;
+    private final Map<String, JLabel> resourceValueLabels = new LinkedHashMap<>();
+    private final JLabel resourceSourceLabel = new JLabel();
+
+    public HomePanel(GameResourceReader resourceReader) {
+        this.resourceReader = resourceReader;
+
         setOpaque(false);
         setLayout(new BorderLayout(14, 14));
 
@@ -81,18 +89,12 @@ public class HomePanel extends JPanel {
         panel.add(Box.createVerticalGlue());
         panel.add(Box.createVerticalStrut(18));
 
-        JButton start = new JButton("Start");
+        JButton start = new ThemedButton("Start");
         start.setAlignmentX(Component.CENTER_ALIGNMENT);
         start.setPreferredSize(new Dimension(0, 64));
         start.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
-        start.setBackground(RPGHelperTheme.ACCENT);
-        start.setForeground(Color.WHITE);
-        start.setFocusPainted(false);
         start.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        start.setBorder(new CompoundBorder(
-                new LineBorder(RPGHelperTheme.brighten(RPGHelperTheme.ACCENT, 0.15f), 1, true),
-                new EmptyBorder(10, 10, 10, 10)
-        ));
+        RPGHelperTheme.stylePrimaryButton(start);
         start.addActionListener(event -> JOptionPane.showMessageDialog(
                 this,
                 "The Home screen is wired up.\nNext we can attach real battle automation logic here.",
@@ -224,16 +226,68 @@ public class HomePanel extends JPanel {
         JPanel panel = RPGHelperTheme.titledPanel("Resource Tracker");
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        panel.add(RPGHelperTheme.resourceLine("Energy", "845 / 130", RPGHelperTheme.createResourceIcon("EN", new Color(77, 196, 104))));
+        panel.add(createTrackedResourceLine("Energy", "845 / 130", "EN", new Color(77, 196, 104)));
         panel.add(RPGHelperTheme.divider());
-        panel.add(RPGHelperTheme.resourceLine("Blue Shards", "9", RPGHelperTheme.createResourceIcon("B", new Color(80, 150, 255))));
-        panel.add(RPGHelperTheme.resourceLine("Void Shards", "3", RPGHelperTheme.createResourceIcon("V", new Color(180, 90, 230))));
-        panel.add(RPGHelperTheme.resourceLine("Sacred Shards", "25", RPGHelperTheme.createResourceIcon("S", new Color(235, 175, 50))));
+        panel.add(createTrackedResourceLine("Blue Shards", "9", "B", new Color(80, 150, 255)));
+        panel.add(createTrackedResourceLine("Void Shards", "3", "V", new Color(180, 90, 230)));
+        panel.add(createTrackedResourceLine("Sacred Shards", "25", "S", new Color(235, 175, 50)));
         panel.add(RPGHelperTheme.divider());
-        panel.add(RPGHelperTheme.resourceLine("Silver", "27,480,000", RPGHelperTheme.createResourceIcon("AG", new Color(180, 185, 195))));
+        panel.add(createTrackedResourceLine("Silver", "27,480,000", "AG", new Color(180, 185, 195)));
         panel.add(RPGHelperTheme.divider());
-        panel.add(RPGHelperTheme.resourceLine("Gems", "1,320", RPGHelperTheme.createResourceIcon("G", new Color(220, 70, 90))));
+        panel.add(createTrackedResourceLine("Gems", "1,320", "G", new Color(220, 70, 90)));
+        panel.add(Box.createVerticalStrut(12));
+
+        resourceSourceLabel.setForeground(RPGHelperTheme.MUTED);
+        resourceSourceLabel.setFont(RPGHelperTheme.SMALL);
+        resourceSourceLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(resourceSourceLabel);
+        panel.add(Box.createVerticalStrut(10));
+
+        JButton syncButton = new ThemedButton("Sync Resources");
+        syncButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        syncButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        RPGHelperTheme.styleSecondaryButton(syncButton);
+        syncButton.addActionListener(event -> refreshResources());
+        panel.add(syncButton);
         panel.add(Box.createVerticalGlue());
+
+        refreshResources();
         return panel;
+    }
+
+    private JPanel createTrackedResourceLine(String key, String initialValue, String iconText, Color color) {
+        JPanel row = new JPanel(new BorderLayout());
+        row.setOpaque(false);
+        row.setBorder(new EmptyBorder(10, 0, 10, 0));
+
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        left.setOpaque(false);
+
+        JLabel iconLabel = new JLabel(RPGHelperTheme.createResourceIcon(iconText, color));
+        JLabel keyLabel = new JLabel(key + ":");
+        keyLabel.setForeground(RPGHelperTheme.TEXT);
+        keyLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        left.add(iconLabel);
+        left.add(keyLabel);
+
+        JLabel valueLabel = new JLabel(initialValue);
+        valueLabel.setForeground(RPGHelperTheme.TEXT);
+        valueLabel.setFont(RPGHelperTheme.BIG);
+        resourceValueLabels.put(key, valueLabel);
+
+        row.add(left, BorderLayout.WEST);
+        row.add(valueLabel, BorderLayout.EAST);
+        return row;
+    }
+
+    private void refreshResources() {
+        GameResourceSnapshot snapshot = resourceReader.readSnapshot();
+        resourceValueLabels.get("Energy").setText(snapshot.getEnergy());
+        resourceValueLabels.get("Blue Shards").setText(snapshot.getBlueShards());
+        resourceValueLabels.get("Void Shards").setText(snapshot.getVoidShards());
+        resourceValueLabels.get("Sacred Shards").setText(snapshot.getSacredShards());
+        resourceValueLabels.get("Silver").setText(snapshot.getSilver());
+        resourceValueLabels.get("Gems").setText(snapshot.getGems());
+        resourceSourceLabel.setText("Source: " + snapshot.getSource());
     }
 }
