@@ -46,9 +46,9 @@ public class RPGHelperPrototype extends JFrame {
         root.add(createFooter(), BorderLayout.SOUTH);
 
         seedInitialLogs();
-        launchRaidIfConfigured();
         registerDebugShortcut();
         showScreen("Home");
+        scheduleStartupTasks();
     }
 
     private void registerScreens() {
@@ -180,10 +180,33 @@ public class RPGHelperPrototype extends JFrame {
         repaint();
     }
 
+    private void scheduleStartupTasks() {
+        Timer startupTimer = new Timer(500, event -> {
+            launchRaidIfConfigured();
+            refreshDebugData();
+        });
+        startupTimer.setRepeats(false);
+        startupTimer.start();
+    }
+
     private void launchRaidIfConfigured() {
-        if (settings.isAutoLaunchRaidOnStartup() && !raidClientService.isRaidRunning()) {
-            logService.log(raidClientService.launchRaid(settings));
+        if (!settings.isAutoLaunchRaidOnStartup()) {
+            logService.log("Startup: auto-launch is disabled.");
+            return;
         }
+
+        if (settings.getRaidExecutablePath().isEmpty()) {
+            logService.log("Startup: auto-launch is enabled, but no Raid path is configured.");
+            return;
+        }
+
+        if (raidClientService.isRaidRunning()) {
+            logService.log("Startup: Raid is already running, so no launch was needed.");
+            return;
+        }
+
+        String launchMessage = raidClientService.launchRaid(settings);
+        logService.log("Startup auto-launch: " + launchMessage);
     }
 
     private void registerDebugShortcut() {
@@ -211,6 +234,7 @@ public class RPGHelperPrototype extends JFrame {
 
     private void seedInitialLogs() {
         logService.log("RPG Helper started.");
+        logService.log("Startup setting: auto-launch is " + (settings.isAutoLaunchRaidOnStartup() ? "enabled" : "disabled") + ".");
         logService.log("Example: Replacing Kael with Deacon Armstrong champion.");
     }
 
