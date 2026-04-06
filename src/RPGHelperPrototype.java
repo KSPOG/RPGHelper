@@ -11,7 +11,10 @@ public class RPGHelperPrototype extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel screenContainer = new JPanel(cardLayout);
     private final Map<String, JButton> navigationButtons = new LinkedHashMap<>();
-    private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(new MockGameResourceReader());
+    private final MutableMockGameResourceReader debugReader = new MutableMockGameResourceReader();
+    private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(debugReader);
+    private final HomePanel homePanel = new HomePanel(resourceReader);
+    private final DebugHotfixFrame debugHotfixFrame = new DebugHotfixFrame(this, debugReader);
 
     public RPGHelperPrototype() {
         setTitle("RPG Helper");
@@ -31,12 +34,13 @@ public class RPGHelperPrototype extends JFrame {
         root.add(createBody(), BorderLayout.CENTER);
         root.add(createFooter(), BorderLayout.SOUTH);
 
+        registerDebugShortcut();
         showScreen("Home");
     }
 
     private void registerScreens() {
         screenContainer.setOpaque(false);
-        screenContainer.add(new HomePanel(resourceReader), "Home");
+        screenContainer.add(homePanel, "Home");
         screenContainer.add(new AutoFarmPanel(), "Auto-Farm");
         screenContainer.add(new ChampionUpgradesPanel(), "Champion Upgrades");
         screenContainer.add(new ForgePanel(), "Forge");
@@ -110,6 +114,10 @@ public class RPGHelperPrototype extends JFrame {
         ));
         left.add(helpButton);
 
+        JButton debugButton = RPGHelperTheme.footerButton("D");
+        debugButton.addActionListener(event -> openDebugHotfixWindow());
+        left.add(debugButton);
+
         JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         center.setOpaque(false);
         center.add(new JLabel(makeFooterTitle()));
@@ -141,11 +149,33 @@ public class RPGHelperPrototype extends JFrame {
         return footer;
     }
 
-    private void showScreen(String screenName) {
+    public void showScreen(String screenName) {
         cardLayout.show(screenContainer, screenName);
         for (Map.Entry<String, JButton> entry : navigationButtons.entrySet()) {
             RPGHelperTheme.styleTab(entry.getValue(), entry.getKey().equals(screenName));
         }
+    }
+
+    public void refreshDebugData() {
+        homePanel.refreshResources();
+        repaint();
+    }
+
+    private void registerDebugShortcut() {
+        JRootPane rootPane = getRootPane();
+        rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke("F12"), "openDebugHotfix");
+        rootPane.getActionMap().put("openDebugHotfix", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent event) {
+                openDebugHotfixWindow();
+            }
+        });
+    }
+
+    private void openDebugHotfixWindow() {
+        debugHotfixFrame.setVisible(true);
+        debugHotfixFrame.toFront();
     }
 
     private String makeFooterTitle() {
