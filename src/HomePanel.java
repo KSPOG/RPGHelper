@@ -10,11 +10,13 @@ import java.util.Map;
 public class HomePanel extends JPanel {
 
     private final GameResourceReader resourceReader;
+    private final AppLogService logService;
     private final Map<String, JLabel> resourceValueLabels = new LinkedHashMap<>();
     private final JLabel resourceSourceLabel = new JLabel();
 
-    public HomePanel(GameResourceReader resourceReader) {
+    public HomePanel(GameResourceReader resourceReader, AppLogService logService) {
         this.resourceReader = resourceReader;
+        this.logService = logService;
 
         setOpaque(false);
         setLayout(new BorderLayout(14, 14));
@@ -101,6 +103,7 @@ public class HomePanel extends JPanel {
                 "Start Button",
                 JOptionPane.INFORMATION_MESSAGE
         ));
+        start.addActionListener(event -> logService.log("Starting run with current battle settings."));
         panel.add(start);
 
         return panel;
@@ -247,7 +250,10 @@ public class HomePanel extends JPanel {
         syncButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         syncButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         RPGHelperTheme.styleSecondaryButton(syncButton);
-        syncButton.addActionListener(event -> refreshResources());
+        syncButton.addActionListener(event -> {
+            refreshResources();
+            logService.log("Synced resources from the current game reader.");
+        });
         panel.add(syncButton);
         panel.add(Box.createVerticalGlue());
 

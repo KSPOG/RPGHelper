@@ -8,6 +8,7 @@ public class SettingsPanel extends JPanel {
     private final AppSettingsStore settingsStore;
     private final RaidClientService raidClientService;
     private final SettingsChangeListener settingsChangeListener;
+    private final AppLogService logService;
 
     private final JTextField executablePathField = new JTextField();
     private final JCheckBox autoLaunchCheck = RPGHelperTheme.check("Launch Raid on app startup");
@@ -17,12 +18,14 @@ public class SettingsPanel extends JPanel {
             AppSettings settings,
             AppSettingsStore settingsStore,
             RaidClientService raidClientService,
-            SettingsChangeListener settingsChangeListener
+            SettingsChangeListener settingsChangeListener,
+            AppLogService logService
     ) {
         this.settings = settings;
         this.settingsStore = settingsStore;
         this.raidClientService = raidClientService;
         this.settingsChangeListener = settingsChangeListener;
+        this.logService = logService;
 
         setOpaque(false);
         setLayout(new BorderLayout(14, 14));
@@ -117,15 +120,19 @@ public class SettingsPanel extends JPanel {
             settingsStore.save(settings);
             settingsChangeListener.onSettingsSaved(settings);
             statusLabel.setText("Settings saved. " + raidClientService.describeStatus(settings));
+            logService.log("Saved Raid settings. Auto launch is " + (settings.isAutoLaunchRaidOnStartup() ? "enabled" : "disabled") + ".");
         } catch (Exception exception) {
             statusLabel.setText("Failed to save settings: " + exception.getMessage());
+            logService.log("Failed to save settings: " + exception.getMessage());
         }
     }
 
     private void launchRaidNow() {
         settings.setRaidExecutablePath(executablePathField.getText());
         settings.setAutoLaunchRaidOnStartup(autoLaunchCheck.isSelected());
-        statusLabel.setText(raidClientService.launchRaid(settings));
+        String message = raidClientService.launchRaid(settings);
+        statusLabel.setText(message);
+        logService.log(message);
     }
 
     public void refreshStatus() {

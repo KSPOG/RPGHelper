@@ -8,11 +8,13 @@ public class DebugHotfixFrame extends JFrame {
 
     private final RPGHelperPrototype app;
     private final MutableMockGameResourceReader debugReader;
+    private final AppLogService logService;
     private final Map<String, JTextField> resourceFields = new LinkedHashMap<>();
 
-    public DebugHotfixFrame(RPGHelperPrototype app, MutableMockGameResourceReader debugReader) {
+    public DebugHotfixFrame(RPGHelperPrototype app, MutableMockGameResourceReader debugReader, AppLogService logService) {
         this.app = app;
         this.debugReader = debugReader;
+        this.logService = logService;
 
         setTitle("RPG Helper Debug");
         setDefaultCloseOperation(HIDE_ON_CLOSE);
@@ -116,6 +118,7 @@ public class DebugHotfixFrame extends JFrame {
                 resourceFields.get("Gems").getText().trim(),
                 "Debug hotfix override"
         );
+        logService.log("Applied debug hotfix resource override.");
         app.refreshDebugData();
     }
 }

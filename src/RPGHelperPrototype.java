@@ -14,16 +14,18 @@ public class RPGHelperPrototype extends JFrame {
     private final AppSettingsStore settingsStore = new AppSettingsStore();
     private final AppSettings settings = settingsStore.load();
     private final RaidClientService raidClientService = new RaidClientService();
+    private final AppLogService logService = new AppLogService();
     private final MutableMockGameResourceReader debugReader = new MutableMockGameResourceReader();
     private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(debugReader, settings, raidClientService);
-    private final HomePanel homePanel = new HomePanel(resourceReader);
+    private final HomePanel homePanel = new HomePanel(resourceReader, logService);
     private final SettingsPanel settingsPanel = new SettingsPanel(settings, settingsStore, raidClientService, new SettingsChangeListener() {
         @Override
         public void onSettingsSaved(AppSettings updatedSettings) {
             refreshDebugData();
         }
-    });
-    private final DebugHotfixFrame debugHotfixFrame = new DebugHotfixFrame(this, debugReader);
+    }, logService);
+    private final DebugHotfixFrame debugHotfixFrame = new DebugHotfixFrame(this, debugReader, logService);
+    private final LogFrame logFrame = new LogFrame(this, logService);
 
     public RPGHelperPrototype() {
         setTitle("RPG Helper");
@@ -43,6 +45,7 @@ public class RPGHelperPrototype extends JFrame {
         root.add(createBody(), BorderLayout.CENTER);
         root.add(createFooter(), BorderLayout.SOUTH);
 
+        seedInitialLogs();
         launchRaidIfConfigured();
         registerDebugShortcut();
         showScreen("Home");
@@ -128,6 +131,10 @@ public class RPGHelperPrototype extends JFrame {
         debugButton.addActionListener(event -> openDebugHotfixWindow());
         left.add(debugButton);
 
+        JButton logButton = RPGHelperTheme.footerButton("L");
+        logButton.addActionListener(event -> openLogWindow());
+        left.add(logButton);
+
         JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         center.setOpaque(false);
         center.add(new JLabel(makeFooterTitle()));
@@ -169,12 +176,13 @@ public class RPGHelperPrototype extends JFrame {
     public void refreshDebugData() {
         homePanel.refreshResources();
         settingsPanel.refreshStatus();
+        logFrame.refreshEntries();
         repaint();
     }
 
     private void launchRaidIfConfigured() {
         if (settings.isAutoLaunchRaidOnStartup() && !raidClientService.isRaidRunning()) {
-            raidClientService.launchRaid(settings);
+            logService.log(raidClientService.launchRaid(settings));
         }
     }
 
@@ -193,6 +201,17 @@ public class RPGHelperPrototype extends JFrame {
     private void openDebugHotfixWindow() {
         debugHotfixFrame.setVisible(true);
         debugHotfixFrame.toFront();
+    }
+
+    private void openLogWindow() {
+        logFrame.refreshEntries();
+        logFrame.setVisible(true);
+        logFrame.toFront();
+    }
+
+    private void seedInitialLogs() {
+        logService.log("RPG Helper started.");
+        logService.log("Example: Replacing Kael with Deacon Armstrong champion.");
     }
 
     private String makeFooterTitle() {
