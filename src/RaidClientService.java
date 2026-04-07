@@ -7,10 +7,11 @@ import java.util.List;
 
 public class RaidClientService {
 
-    private static final String[] PROCESS_NAMES = {
+    private static final String[] GAME_PROCESS_NAMES = {
+            "Raid",
             "Raid.exe",
-            "Raid Shadow Legends.exe",
-            "PlariumPlay.exe"
+            "Raid Shadow Legends",
+            "Raid Shadow Legends.exe"
     };
     private static final String[] EXECUTABLE_NAMES = {
             "Raid.exe",
@@ -24,18 +25,28 @@ public class RaidClientService {
 
     public String getRunningProcessName() {
         try {
-            Process process = new ProcessBuilder("tasklist", "/fo", "csv", "/nh").start();
+            Process process = new ProcessBuilder(
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    "Get-Process -ErrorAction SilentlyContinue | " +
+                            "Where-Object { $_.MainWindowHandle -ne 0 -and " +
+                            "($_.ProcessName -like '*Raid*' -or $_.MainWindowTitle -like '*RAID*') } | " +
+                            "Select-Object -First 1 -ExpandProperty ProcessName"
+            ).start();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    for (String processName : PROCESS_NAMES) {
-                        if (line.toLowerCase().contains("\"" + processName.toLowerCase() + "\"")) {
-                            return processName;
-                        }
-                    }
+                String processName = reader.readLine();
+                if (processName != null && !processName.trim().isEmpty()) {
+                    return processName.trim();
                 }
             }
         } catch (IOException ignored) {
+        }
+
+        for (String processName : GAME_PROCESS_NAMES) {
+            if (isProcessPresent(processName)) {
+                return processName;
+            }
         }
 
         return null;
@@ -132,6 +143,24 @@ public class RaidClientService {
                 return true;
             }
         }
+        return false;
+    }
+
+    private boolean isProcessPresent(String processName) {
+        try {
+            Process process = new ProcessBuilder("tasklist", "/fi", "IMAGENAME eq " + processName, "/fo", "csv", "/nh").start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String normalized = line.trim().toLowerCase();
+                    if (!normalized.isEmpty() && !normalized.startsWith("info:") && normalized.contains("\"" + processName.toLowerCase() + "\"")) {
+                        return true;
+                    }
+                }
+            }
+        } catch (IOException ignored) {
+        }
+
         return false;
     }
 
