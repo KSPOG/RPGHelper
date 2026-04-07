@@ -47,7 +47,7 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         }
 
         try {
-            ParsedHudValues parsedHudValues = readCalibratedValues();
+            ParsedHudValues parsedHudValues = readCalibratedValuesInternal();
             if (!parsedHudValues.hasAnyValue()) {
                 BufferedImage capture = captureHudStrip();
                 String ocrText = windowsOcrService.readText(capture);
@@ -80,6 +80,31 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         }
     }
 
+    public CalibratedResourceReadResult testCalibratedRead() {
+        try {
+            ParsedHudValues parsed = readCalibratedValuesInternal();
+            return new CalibratedResourceReadResult(
+                    valueOrUnknown(parsed.energy),
+                    shorten(parsed.energyRawText, 120),
+                    valueOrUnknown(parsed.silver),
+                    shorten(parsed.silverRawText, 120),
+                    valueOrUnknown(parsed.gems),
+                    shorten(parsed.gemsRawText, 120),
+                    parsed.sourceText
+            );
+        } catch (Exception exception) {
+            return new CalibratedResourceReadResult(
+                    "?",
+                    "Error: " + exception.getMessage(),
+                    "?",
+                    "Error: " + exception.getMessage(),
+                    "?",
+                    "Error: " + exception.getMessage(),
+                    "Calibration test failed"
+            );
+        }
+    }
+
     @Override
     public String getReaderName() {
         return "Screen Capture Reader";
@@ -95,25 +120,28 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         return new Robot().createScreenCapture(captureArea);
     }
 
-    private ParsedHudValues readCalibratedValues() throws AWTException, IOException {
+    private ParsedHudValues readCalibratedValuesInternal() throws AWTException, IOException {
         ParsedHudValues parsed = new ParsedHudValues();
         Robot robot = new Robot();
         List<String> sourceParts = new ArrayList<>();
 
         if (settings.getEnergyRegion() != null) {
             String energyText = windowsOcrService.readText(robot.createScreenCapture(settings.getEnergyRegion().toRectangle()));
+            parsed.energyRawText = energyText;
             parsed.energy = extractEnergy(energyText);
             sourceParts.add("energy=" + valueOrUnknown(parsed.energy));
         }
 
         if (settings.getSilverRegion() != null) {
             String silverText = windowsOcrService.readText(robot.createScreenCapture(settings.getSilverRegion().toRectangle()));
+            parsed.silverRawText = silverText;
             parsed.silver = extractSilver(silverText);
             sourceParts.add("silver=" + valueOrUnknown(parsed.silver));
         }
 
         if (settings.getGemsRegion() != null) {
             String gemsText = windowsOcrService.readText(robot.createScreenCapture(settings.getGemsRegion().toRectangle()));
+            parsed.gemsRawText = gemsText;
             parsed.gems = extractGems(gemsText);
             sourceParts.add("gems=" + valueOrUnknown(parsed.gems));
         }
@@ -303,8 +331,11 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
 
     private static class ParsedHudValues {
         private String energy;
+        private String energyRawText;
         private String silver;
+        private String silverRawText;
         private String gems;
+        private String gemsRawText;
         private String sourceText;
 
         private boolean hasAnyValue() {

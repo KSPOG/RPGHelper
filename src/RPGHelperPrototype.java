@@ -16,9 +16,9 @@ public class RPGHelperPrototype extends JFrame {
     private final RaidClientService raidClientService = new RaidClientService();
     private final AppLogService logService = new AppLogService();
     private final MutableMockGameResourceReader debugReader = new MutableMockGameResourceReader();
-    private final GameResourceReader resourceReader = new ScreenCaptureGameResourceReader(debugReader, settings, raidClientService);
+    private final ScreenCaptureGameResourceReader resourceReader = new ScreenCaptureGameResourceReader(debugReader, settings, raidClientService);
     private final HomePanel homePanel = new HomePanel(resourceReader, logService);
-    private final SettingsPanel settingsPanel = new SettingsPanel(settings, settingsStore, raidClientService, new SettingsChangeListener() {
+    private final SettingsPanel settingsPanel = new SettingsPanel(settings, settingsStore, raidClientService, resourceReader, new SettingsChangeListener() {
         @Override
         public void onSettingsSaved(AppSettings updatedSettings) {
             refreshDebugData();

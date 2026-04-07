@@ -7,6 +7,7 @@ public class SettingsPanel extends JPanel {
     private final AppSettings settings;
     private final AppSettingsStore settingsStore;
     private final RaidClientService raidClientService;
+    private final ScreenCaptureGameResourceReader screenCaptureGameResourceReader;
     private final SettingsChangeListener settingsChangeListener;
     private final AppLogService logService;
 
@@ -17,17 +18,23 @@ public class SettingsPanel extends JPanel {
     private final JLabel energyRegionLabel = new JLabel();
     private final JLabel silverRegionLabel = new JLabel();
     private final JLabel gemsRegionLabel = new JLabel();
+    private final JLabel energyTestLabel = new JLabel();
+    private final JLabel silverTestLabel = new JLabel();
+    private final JLabel gemsTestLabel = new JLabel();
+    private final JLabel calibrationSummaryLabel = new JLabel();
 
     public SettingsPanel(
             AppSettings settings,
             AppSettingsStore settingsStore,
             RaidClientService raidClientService,
+            ScreenCaptureGameResourceReader screenCaptureGameResourceReader,
             SettingsChangeListener settingsChangeListener,
             AppLogService logService
     ) {
         this.settings = settings;
         this.settingsStore = settingsStore;
         this.raidClientService = raidClientService;
+        this.screenCaptureGameResourceReader = screenCaptureGameResourceReader;
         this.settingsChangeListener = settingsChangeListener;
         this.logService = logService;
 
@@ -119,6 +126,27 @@ public class SettingsPanel extends JPanel {
         }));
         panel.add(Box.createVerticalStrut(16));
 
+        JPanel calibrationTestRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        calibrationTestRow.setOpaque(false);
+        calibrationTestRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton testCalibrationButton = new ThemedButton("Test Calibration");
+        RPGHelperTheme.styleSecondaryButton(testCalibrationButton);
+        testCalibrationButton.addActionListener(event -> testCalibration());
+        calibrationTestRow.add(testCalibrationButton);
+        panel.add(calibrationTestRow);
+        panel.add(Box.createVerticalStrut(10));
+
+        panel.add(buildDebugLine("Energy OCR", energyTestLabel));
+        panel.add(buildDebugLine("Silver OCR", silverTestLabel));
+        panel.add(buildDebugLine("Gems OCR", gemsTestLabel));
+        calibrationSummaryLabel.setForeground(RPGHelperTheme.MUTED);
+        calibrationSummaryLabel.setFont(RPGHelperTheme.SMALL);
+        calibrationSummaryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        calibrationSummaryLabel.setText("Run Test Calibration to inspect raw OCR results.");
+        panel.add(calibrationSummaryLabel);
+        panel.add(Box.createVerticalStrut(16));
+
         saveLocationLabel.setForeground(RPGHelperTheme.MUTED);
         saveLocationLabel.setFont(RPGHelperTheme.SMALL);
         saveLocationLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -167,6 +195,24 @@ public class SettingsPanel extends JPanel {
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         return label;
+    }
+
+    private JPanel buildDebugLine(String labelText, JLabel valueLabel) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        row.setBorder(new EmptyBorder(3, 0, 3, 0));
+
+        JLabel label = new JLabel(labelText + ":");
+        label.setForeground(RPGHelperTheme.TEXT);
+        label.setFont(RPGHelperTheme.VALUE);
+
+        valueLabel.setForeground(RPGHelperTheme.MUTED);
+        valueLabel.setFont(RPGHelperTheme.SMALL);
+
+        row.add(label, BorderLayout.WEST);
+        row.add(valueLabel, BorderLayout.CENTER);
+        return row;
     }
 
     private JPanel createCalibrationRow(String name, JLabel valueLabel, Runnable action) {
@@ -219,6 +265,15 @@ public class SettingsPanel extends JPanel {
 
     private String formatRegion(ScreenRegion region) {
         return region == null ? "Not calibrated" : region.toString();
+    }
+
+    private void testCalibration() {
+        CalibratedResourceReadResult result = screenCaptureGameResourceReader.testCalibratedRead();
+        energyTestLabel.setText(result.getEnergyValue() + " | raw: " + result.getEnergyRawText());
+        silverTestLabel.setText(result.getSilverValue() + " | raw: " + result.getSilverRawText());
+        gemsTestLabel.setText(result.getGemsValue() + " | raw: " + result.getGemsRawText());
+        calibrationSummaryLabel.setText(result.getSourceSummary());
+        logService.log("Ran calibration test for energy, silver, and gems.");
     }
 
     private void saveSettings() {
