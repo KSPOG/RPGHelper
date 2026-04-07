@@ -14,6 +14,9 @@ public class SettingsPanel extends JPanel {
     private final JCheckBox autoLaunchCheck = RPGHelperTheme.check("Launch Raid on app startup");
     private final JLabel statusLabel = new JLabel();
     private final JLabel saveLocationLabel = new JLabel();
+    private final JLabel energyRegionLabel = new JLabel();
+    private final JLabel silverRegionLabel = new JLabel();
+    private final JLabel gemsRegionLabel = new JLabel();
 
     public SettingsPanel(
             AppSettings settings,
@@ -73,6 +76,49 @@ public class SettingsPanel extends JPanel {
         panel.add(autoLaunchCheck);
         panel.add(Box.createVerticalStrut(16));
 
+        panel.add(buildFieldLabel("Resource capture calibration"));
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(createCalibrationRow("Energy", energyRegionLabel, new Runnable() {
+            @Override
+            public void run() {
+                startCalibration("Energy", new ScreenRegionSelectionListener() {
+                    @Override
+                    public void onRegionSelected(ScreenRegion region) {
+                        settings.setEnergyRegion(region);
+                        energyRegionLabel.setText(formatRegion(region));
+                        persistCalibration("energy");
+                    }
+                });
+            }
+        }));
+        panel.add(createCalibrationRow("Silver", silverRegionLabel, new Runnable() {
+            @Override
+            public void run() {
+                startCalibration("Silver", new ScreenRegionSelectionListener() {
+                    @Override
+                    public void onRegionSelected(ScreenRegion region) {
+                        settings.setSilverRegion(region);
+                        silverRegionLabel.setText(formatRegion(region));
+                        persistCalibration("silver");
+                    }
+                });
+            }
+        }));
+        panel.add(createCalibrationRow("Gems", gemsRegionLabel, new Runnable() {
+            @Override
+            public void run() {
+                startCalibration("Gems", new ScreenRegionSelectionListener() {
+                    @Override
+                    public void onRegionSelected(ScreenRegion region) {
+                        settings.setGemsRegion(region);
+                        gemsRegionLabel.setText(formatRegion(region));
+                        persistCalibration("gems");
+                    }
+                });
+            }
+        }));
+        panel.add(Box.createVerticalStrut(16));
+
         saveLocationLabel.setForeground(RPGHelperTheme.MUTED);
         saveLocationLabel.setFont(RPGHelperTheme.SMALL);
         saveLocationLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -108,6 +154,9 @@ public class SettingsPanel extends JPanel {
         panel.add(buttonRow);
         panel.add(Box.createVerticalGlue());
 
+        energyRegionLabel.setText(formatRegion(settings.getEnergyRegion()));
+        silverRegionLabel.setText(formatRegion(settings.getSilverRegion()));
+        gemsRegionLabel.setText(formatRegion(settings.getGemsRegion()));
         refreshStatus();
         return panel;
     }
@@ -118,6 +167,58 @@ public class SettingsPanel extends JPanel {
         label.setFont(new Font("Segoe UI", Font.BOLD, 15));
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         return label;
+    }
+
+    private JPanel createCalibrationRow(String name, JLabel valueLabel, Runnable action) {
+        JPanel row = new JPanel(new BorderLayout(10, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+        row.setBorder(new EmptyBorder(4, 0, 4, 0));
+
+        JLabel nameLabel = new JLabel(name + " region:");
+        nameLabel.setForeground(RPGHelperTheme.TEXT);
+        nameLabel.setFont(RPGHelperTheme.VALUE);
+
+        valueLabel.setForeground(RPGHelperTheme.MUTED);
+        valueLabel.setFont(RPGHelperTheme.SMALL);
+
+        JButton calibrateButton = new ThemedButton("Calibrate");
+        RPGHelperTheme.styleSecondaryButton(calibrateButton);
+        calibrateButton.addActionListener(event -> action.run());
+
+        JPanel center = new JPanel(new BorderLayout());
+        center.setOpaque(false);
+        center.add(valueLabel, BorderLayout.CENTER);
+
+        row.add(nameLabel, BorderLayout.WEST);
+        row.add(center, BorderLayout.CENTER);
+        row.add(calibrateButton, BorderLayout.EAST);
+        return row;
+    }
+
+    private void startCalibration(String resourceName, ScreenRegionSelectionListener listener) {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        ScreenRegionSelectionOverlay overlay = new ScreenRegionSelectionOverlay(owner, resourceName, listener);
+        overlay.getRootPane().registerKeyboardAction(event -> overlay.dispose(),
+                KeyStroke.getKeyStroke("ESCAPE"),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
+        overlay.setVisible(true);
+    }
+
+    private void persistCalibration(String resourceName) {
+        try {
+            settingsStore.save(settings);
+            settingsChangeListener.onSettingsSaved(settings);
+            statusLabel.setText("Saved " + resourceName + " calibration. " + raidClientService.describeStatus(settings));
+            logService.log("Saved " + resourceName + " calibration region.");
+        } catch (Exception exception) {
+            statusLabel.setText("Failed to save " + resourceName + " calibration: " + exception.getMessage());
+            logService.log("Failed to save " + resourceName + " calibration: " + exception.getMessage());
+        }
+    }
+
+    private String formatRegion(ScreenRegion region) {
+        return region == null ? "Not calibrated" : region.toString();
     }
 
     private void saveSettings() {

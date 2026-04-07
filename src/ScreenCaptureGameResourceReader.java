@@ -12,6 +12,7 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
     private final AppSettings settings;
     private final RaidClientService raidClientService;
     private final WindowsOcrService windowsOcrService = new WindowsOcrService();
+    private GameResourceSnapshot lastGoodSnapshot;
 
     public ScreenCaptureGameResourceReader(
             GameResourceReader fallbackReader,
@@ -46,27 +47,34 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         }
 
         try {
-            BufferedImage capture = captureHudStrip();
-            String ocrText = windowsOcrService.readText(capture);
-            ParsedHudValues parsedHudValues = parseHudValues(ocrText);
+            ParsedHudValues parsedHudValues = readCalibratedValues();
+            if (!parsedHudValues.hasAnyValue()) {
+                BufferedImage capture = captureHudStrip();
+                String ocrText = windowsOcrService.readText(capture);
+                parsedHudValues = parseHudValues(ocrText);
+                parsedHudValues.sourceText = buildSourceText(parsedHudValues, ocrText);
+            }
 
-            return new GameResourceSnapshot(
-                    parsedHudValues.energy != null ? parsedHudValues.energy : fallback.getEnergy(),
+            GameResourceSnapshot snapshot = new GameResourceSnapshot(
+                    chooseValue(parsedHudValues.energy, fallback.getEnergy(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getEnergy()),
                     fallback.getBlueShards(),
                     fallback.getVoidShards(),
                     fallback.getSacredShards(),
-                    parsedHudValues.silver != null ? parsedHudValues.silver : fallback.getSilver(),
-                    parsedHudValues.gems != null ? parsedHudValues.gems : fallback.getGems(),
-                    buildSourceText(parsedHudValues, ocrText)
+                    chooseValue(parsedHudValues.silver, fallback.getSilver(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getSilver()),
+                    chooseValue(parsedHudValues.gems, fallback.getGems(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getGems()),
+                    parsedHudValues.sourceText
             );
+
+            lastGoodSnapshot = snapshot;
+            return snapshot;
         } catch (Exception exception) {
             return new GameResourceSnapshot(
-                    fallback.getEnergy(),
+                    lastGoodSnapshot != null ? lastGoodSnapshot.getEnergy() : fallback.getEnergy(),
                     fallback.getBlueShards(),
                     fallback.getVoidShards(),
                     fallback.getSacredShards(),
-                    fallback.getSilver(),
-                    fallback.getGems(),
+                    lastGoodSnapshot != null ? lastGoodSnapshot.getSilver() : fallback.getSilver(),
+                    lastGoodSnapshot != null ? lastGoodSnapshot.getGems() : fallback.getGems(),
                     "OCR failed: " + exception.getMessage()
             );
         }
@@ -85,6 +93,35 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         int height = Math.min(110, screenSize.height);
         Rectangle captureArea = new Rectangle(x, y, width, height);
         return new Robot().createScreenCapture(captureArea);
+    }
+
+    private ParsedHudValues readCalibratedValues() throws AWTException, IOException {
+        ParsedHudValues parsed = new ParsedHudValues();
+        Robot robot = new Robot();
+        List<String> sourceParts = new ArrayList<>();
+
+        if (settings.getEnergyRegion() != null) {
+            String energyText = windowsOcrService.readText(robot.createScreenCapture(settings.getEnergyRegion().toRectangle()));
+            parsed.energy = extractEnergy(energyText);
+            sourceParts.add("energy=" + valueOrUnknown(parsed.energy));
+        }
+
+        if (settings.getSilverRegion() != null) {
+            String silverText = windowsOcrService.readText(robot.createScreenCapture(settings.getSilverRegion().toRectangle()));
+            parsed.silver = extractSilver(silverText);
+            sourceParts.add("silver=" + valueOrUnknown(parsed.silver));
+        }
+
+        if (settings.getGemsRegion() != null) {
+            String gemsText = windowsOcrService.readText(robot.createScreenCapture(settings.getGemsRegion().toRectangle()));
+            parsed.gems = extractGems(gemsText);
+            sourceParts.add("gems=" + valueOrUnknown(parsed.gems));
+        }
+
+        parsed.sourceText = sourceParts.isEmpty()
+                ? "No calibrated regions yet. Using fallback HUD OCR."
+                : "Calibrated OCR: " + joinSourceParts(sourceParts);
+        return parsed;
     }
 
     private ParsedHudValues parseHudValues(String ocrText) {
@@ -172,6 +209,54 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         return null;
     }
 
+    private String extractEnergy(String text) {
+        Matcher matcher = Pattern.compile("(\\d[\\d,\\.]{0,8}\\s*/\\s*\\d[\\d,\\.]{0,5})").matcher(text == null ? "" : text);
+        return matcher.find() ? normalizeSlashPair(matcher.group(1)) : null;
+    }
+
+    private String extractSilver(String text) {
+        Matcher matcher = Pattern.compile("(\\d[\\d,\\.]{0,8}(?:\\s?[MK])?)", Pattern.CASE_INSENSITIVE).matcher(text == null ? "" : text);
+        while (matcher.find()) {
+            String candidate = matcher.group(1).replace(" ", "").toUpperCase();
+            if (candidate.endsWith("M") || candidate.endsWith("K") || safeParseNumber(candidate) >= 100000) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private String extractGems(String text) {
+        Matcher matcher = Pattern.compile("(\\d{1,4})").matcher(text == null ? "" : text);
+        while (matcher.find()) {
+            int value = safeParseNumber(matcher.group(1));
+            if (value > 0 && value < 10000) {
+                return Integer.toString(value);
+            }
+        }
+        return null;
+    }
+
+    private String chooseValue(String primary, String fallback, String cached) {
+        if (primary != null && !primary.trim().isEmpty()) {
+            return primary;
+        }
+        if (cached != null && !cached.trim().isEmpty()) {
+            return cached;
+        }
+        return fallback;
+    }
+
+    private String joinSourceParts(List<String> parts) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < parts.size(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(parts.get(i));
+        }
+        return builder.toString();
+    }
+
     private String buildSourceText(ParsedHudValues parsedHudValues, String ocrText) {
         return "HUD OCR: energy="
                 + valueOrUnknown(parsedHudValues.energy)
@@ -220,5 +305,10 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         private String energy;
         private String silver;
         private String gems;
+        private String sourceText;
+
+        private boolean hasAnyValue() {
+            return energy != null || silver != null || gems != null;
+        }
     }
 }

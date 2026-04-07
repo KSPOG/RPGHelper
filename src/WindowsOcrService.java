@@ -1,4 +1,5 @@
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,13 +11,26 @@ public class WindowsOcrService {
     public String readText(BufferedImage image) throws IOException {
         File tempFile = File.createTempFile("rpg-helper-ocr-", ".png");
         try {
-            ImageIO.write(image, "png", tempFile);
+            ImageIO.write(prepareImage(image), "png", tempFile);
             return runOcrScript(tempFile);
         } finally {
             if (tempFile.exists()) {
                 tempFile.delete();
             }
         }
+    }
+
+    private BufferedImage prepareImage(BufferedImage image) {
+        int scaledWidth = Math.max(image.getWidth() * 3, image.getWidth());
+        int scaledHeight = Math.max(image.getHeight() * 3, image.getHeight());
+        BufferedImage prepared = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2 = prepared.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g2.setColor(Color.BLACK);
+        g2.fillRect(0, 0, scaledWidth, scaledHeight);
+        g2.drawImage(image, 0, 0, scaledWidth, scaledHeight, null);
+        g2.dispose();
+        return prepared;
     }
 
     private String runOcrScript(File imageFile) throws IOException {

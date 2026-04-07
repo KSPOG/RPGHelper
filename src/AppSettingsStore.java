@@ -10,6 +10,9 @@ public class AppSettingsStore {
 
     private static final String RAID_EXECUTABLE_PATH = "raid.executable.path";
     private static final String AUTO_LAUNCH_ON_STARTUP = "raid.auto.launch.on.startup";
+    private static final String ENERGY_REGION = "raid.region.energy";
+    private static final String SILVER_REGION = "raid.region.silver";
+    private static final String GEMS_REGION = "raid.region.gems";
     private static final Path LEGACY_SETTINGS_FILE = Paths.get(System.getProperty("user.home"), ".rpg-helper.properties");
 
     public AppSettings load() {
@@ -24,6 +27,9 @@ public class AppSettingsStore {
             properties.load(inputStream);
             settings.setRaidExecutablePath(properties.getProperty(RAID_EXECUTABLE_PATH, ""));
             settings.setAutoLaunchRaidOnStartup(Boolean.parseBoolean(properties.getProperty(AUTO_LAUNCH_ON_STARTUP, "false")));
+            settings.setEnergyRegion(ScreenRegion.parse(properties.getProperty(ENERGY_REGION, "")));
+            settings.setSilverRegion(ScreenRegion.parse(properties.getProperty(SILVER_REGION, "")));
+            settings.setGemsRegion(ScreenRegion.parse(properties.getProperty(GEMS_REGION, "")));
         } catch (IOException ignored) {
         }
 
@@ -34,6 +40,9 @@ public class AppSettingsStore {
         Properties properties = new Properties();
         properties.setProperty(RAID_EXECUTABLE_PATH, settings.getRaidExecutablePath());
         properties.setProperty(AUTO_LAUNCH_ON_STARTUP, Boolean.toString(settings.isAutoLaunchRaidOnStartup()));
+        properties.setProperty(ENERGY_REGION, serializeRegion(settings.getEnergyRegion()));
+        properties.setProperty(SILVER_REGION, serializeRegion(settings.getSilverRegion()));
+        properties.setProperty(GEMS_REGION, serializeRegion(settings.getGemsRegion()));
         Path settingsFile = getSettingsFilePath();
 
         Files.createDirectories(settingsFile.getParent());
@@ -65,5 +74,9 @@ public class AppSettingsStore {
         }
 
         return Paths.get(System.getProperty("user.home"), "AppData", "Roaming", "RPGHelper", "settings.properties");
+    }
+
+    private String serializeRegion(ScreenRegion region) {
+        return region == null ? "" : region.serialize();
     }
 }
