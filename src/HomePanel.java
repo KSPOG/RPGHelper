@@ -4,7 +4,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class HomePanel extends JPanel {
@@ -13,6 +15,23 @@ public class HomePanel extends JPanel {
     private final AppLogService logService;
     private final Map<String, JLabel> resourceValueLabels = new LinkedHashMap<>();
     private final JLabel resourceSourceLabel = new JLabel();
+    private final DefaultTableModel logTableModel = new DefaultTableModel(new Object[]{"Time", "Entry"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    private final JCheckBox iceGolemCheck = RPGHelperTheme.check("Ice Golem");
+    private final JCheckBox spiderCheck = RPGHelperTheme.check("Spider");
+    private final JCheckBox fireKnightCheck = RPGHelperTheme.check("Fire Knight");
+    private final JCheckBox minotaurCheck = RPGHelperTheme.check("Minotaur");
+    private final JCheckBox brutalCheck = RPGHelperTheme.check("Brutal - 12-3");
+    private final JCheckBox classicArenaCheck = RPGHelperTheme.check("Classic Arena");
+    private final JCheckBox tagArenaCheck = RPGHelperTheme.check("Tag Team Arena");
+    private final JCheckBox refillEnergyCheck = RPGHelperTheme.check("Auto Refill Energy");
+    private final JCheckBox refillKeysCheck = RPGHelperTheme.check("Auto Refill Keys");
+    private final JComboBox<String> battleCountCombo = new JComboBox<>(new String[]{"10", "20", "50", "100", "Unlimited"});
 
     public HomePanel(GameResourceReader resourceReader, AppLogService logService) {
         this.resourceReader = resourceReader;
@@ -40,6 +59,14 @@ public class HomePanel extends JPanel {
         add(leftColumn, BorderLayout.WEST);
         add(centerColumn, BorderLayout.CENTER);
         add(rightColumn, BorderLayout.EAST);
+
+        logService.addListener(new AppLogListener() {
+            @Override
+            public void onLogChanged() {
+                refreshLogTable();
+            }
+        });
+        refreshLogTable();
     }
 
     private JComponent createBattleOptions() {
@@ -47,23 +74,23 @@ public class HomePanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         panel.add(RPGHelperTheme.sectionLabel("Dungeons"));
-        panel.add(RPGHelperTheme.check("Ice Golem"));
-        panel.add(RPGHelperTheme.check("Spider"));
-        panel.add(RPGHelperTheme.check("Fire Knight"));
-        panel.add(RPGHelperTheme.check("Minotaur"));
+        panel.add(iceGolemCheck);
+        panel.add(spiderCheck);
+        panel.add(fireKnightCheck);
+        panel.add(minotaurCheck);
         panel.add(Box.createVerticalStrut(12));
         panel.add(RPGHelperTheme.divider());
         panel.add(Box.createVerticalStrut(12));
 
         panel.add(RPGHelperTheme.sectionLabel("Campaign"));
-        panel.add(RPGHelperTheme.check("Brutal - 12-3"));
+        panel.add(brutalCheck);
         panel.add(Box.createVerticalStrut(12));
         panel.add(RPGHelperTheme.divider());
         panel.add(Box.createVerticalStrut(12));
 
         panel.add(RPGHelperTheme.sectionLabel("Arena"));
-        panel.add(RPGHelperTheme.check("Classic Arena"));
-        panel.add(RPGHelperTheme.check("Tag Team Arena"));
+        panel.add(classicArenaCheck);
+        panel.add(tagArenaCheck);
         panel.add(Box.createVerticalStrut(18));
 
         JPanel battleCount = new JPanel(new BorderLayout(8, 0));
@@ -73,21 +100,18 @@ public class HomePanel extends JPanel {
         label.setForeground(RPGHelperTheme.TEXT);
         label.setFont(RPGHelperTheme.VALUE);
 
-        JComboBox<String> combo = new JComboBox<>(new String[]{"10", "20", "50", "100", "Unlimited"});
-        combo.setSelectedIndex(1);
-        RPGHelperTheme.styleCombo(combo);
+        battleCountCombo.setSelectedIndex(1);
+        RPGHelperTheme.styleCombo(battleCountCombo);
 
         battleCount.add(label, BorderLayout.WEST);
-        battleCount.add(combo, BorderLayout.EAST);
+        battleCount.add(battleCountCombo, BorderLayout.EAST);
         panel.add(battleCount);
         panel.add(Box.createVerticalStrut(16));
 
-        JCheckBox refillEnergy = RPGHelperTheme.check("Auto Refill Energy");
-        refillEnergy.setSelected(true);
-        JCheckBox refillKeys = RPGHelperTheme.check("Auto Refill Keys");
-        refillKeys.setSelected(true);
-        panel.add(refillEnergy);
-        panel.add(refillKeys);
+        refillEnergyCheck.setSelected(true);
+        refillKeysCheck.setSelected(true);
+        panel.add(refillEnergyCheck);
+        panel.add(refillKeysCheck);
         panel.add(Box.createVerticalGlue());
         panel.add(Box.createVerticalStrut(18));
 
@@ -97,13 +121,7 @@ public class HomePanel extends JPanel {
         start.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
         start.setFont(new Font("Segoe UI", Font.BOLD, 28));
         RPGHelperTheme.stylePrimaryButton(start);
-        start.addActionListener(event -> JOptionPane.showMessageDialog(
-                this,
-                "The Home screen is wired up.\nNext we can attach real battle automation logic here.",
-                "Start Button",
-                JOptionPane.INFORMATION_MESSAGE
-        ));
-        start.addActionListener(event -> logService.log("Starting run with current battle settings."));
+        start.addActionListener(event -> startSelectedRun());
         panel.add(start);
 
         return panel;
@@ -174,21 +192,7 @@ public class HomePanel extends JPanel {
         panel.setPreferredSize(new Dimension(0, 180));
         panel.setLayout(new BorderLayout());
 
-        String[] columns = {"Time", "Entry"};
-        Object[][] rows = {
-                {"01:03:12", "Battle 115: Victory! (1m 42s)"},
-                {"01:06:45", "Battle 116: Defeat..."},
-                {"01:08:33", "Battle 117: Victory! (1m 46s)"}
-        };
-
-        DefaultTableModel model = new DefaultTableModel(rows, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        JTable table = new JTable(model);
+        JTable table = new JTable(logTableModel);
         table.setRowHeight(32);
         table.setBackground(RPGHelperTheme.PANEL);
         table.setForeground(RPGHelperTheme.TEXT);
@@ -307,5 +311,72 @@ public class HomePanel extends JPanel {
         resourceValueLabels.get("Silver").setText(snapshot.getSilver());
         resourceValueLabels.get("Gems").setText(snapshot.getGems());
         resourceSourceLabel.setText("Source: " + snapshot.getSource());
+    }
+
+    private void refreshLogTable() {
+        logTableModel.setRowCount(0);
+        for (LogEntry entry : logService.getEntries()) {
+            logTableModel.addRow(new Object[]{entry.getTime(), entry.getMessage()});
+        }
+    }
+
+    private void startSelectedRun() {
+        List<String> selectedActivities = new ArrayList<>();
+        if (iceGolemCheck.isSelected()) {
+            selectedActivities.add("Ice Golem");
+        }
+        if (spiderCheck.isSelected()) {
+            selectedActivities.add("Spider");
+        }
+        if (fireKnightCheck.isSelected()) {
+            selectedActivities.add("Fire Knight");
+        }
+        if (minotaurCheck.isSelected()) {
+            selectedActivities.add("Minotaur");
+        }
+        if (brutalCheck.isSelected()) {
+            selectedActivities.add("Brutal 12-3");
+        }
+        if (classicArenaCheck.isSelected()) {
+            selectedActivities.add("Classic Arena");
+        }
+        if (tagArenaCheck.isSelected()) {
+            selectedActivities.add("Tag Team Arena");
+        }
+
+        if (selectedActivities.isEmpty()) {
+            logService.log("Start blocked: select at least one dungeon, campaign, or arena target first.");
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Select at least one dungeon, campaign, or arena target before starting.",
+                    "No Activity Selected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        GameResourceSnapshot snapshot = refreshResources();
+        String battleCount = battleCountCombo.getSelectedItem() == null ? "20" : battleCountCombo.getSelectedItem().toString();
+        StringBuilder summary = new StringBuilder();
+        for (int i = 0; i < selectedActivities.size(); i++) {
+            if (i > 0) {
+                summary.append(", ");
+            }
+            summary.append(selectedActivities.get(i));
+        }
+
+        logService.log("Start requested: targets=[" + summary + "], battleCount=" + battleCount
+                + ", refillEnergy=" + yesNo(refillEnergyCheck.isSelected())
+                + ", refillKeys=" + yesNo(refillKeysCheck.isSelected()) + ".");
+        logService.log("Start snapshot: Energy=" + snapshot.getEnergy()
+                + ", Silver=" + snapshot.getSilver()
+                + ", Gems=" + snapshot.getGems()
+                + ", Ancient=" + snapshot.getBlueShards()
+                + ", Void=" + snapshot.getVoidShards()
+                + ", Sacred=" + snapshot.getSacredShards() + ".");
+    }
+
+    private String yesNo(boolean value) {
+        return value ? "yes" : "no";
     }
 }

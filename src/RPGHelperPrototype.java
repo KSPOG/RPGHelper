@@ -56,7 +56,7 @@ public class RPGHelperPrototype extends JFrame {
         screenContainer.setOpaque(false);
         screenContainer.add(homePanel, "Home");
         screenContainer.add(new AutoFarmPanel(logService), "Auto-Farm");
-        screenContainer.add(new ChampionUpgradesPanel(), "Champion Upgrades");
+        screenContainer.add(new ChampionUpgradesPanel(logService), "Champion Upgrades");
         screenContainer.add(new ForgePanel(), "Forge");
         screenContainer.add(new QuestsEventPanel(), "Quests / Event");
         screenContainer.add(settingsPanel, "Settings");
