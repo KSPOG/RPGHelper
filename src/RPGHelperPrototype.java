@@ -11,6 +11,7 @@ public class RPGHelperPrototype extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel screenContainer = new JPanel(cardLayout);
     private final Map<String, JButton> navigationButtons = new LinkedHashMap<>();
+    private final Map<String, JLabel> footerResourceLabels = new LinkedHashMap<>();
     private final AppSettingsStore settingsStore = new AppSettingsStore();
     private final AppSettings settings = settingsStore.load();
     private final RaidClientService raidClientService = new RaidClientService();
@@ -138,12 +139,12 @@ public class RPGHelperPrototype extends JFrame {
         JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         center.setOpaque(false);
         center.add(new JLabel(makeFooterTitle()));
-        center.add(RPGHelperTheme.footerResourceChip("Energy", "845/130", new Color(77, 196, 104)));
-        center.add(RPGHelperTheme.footerResourceChip("Silver", "27.48M", new Color(180, 185, 195)));
-        center.add(RPGHelperTheme.footerResourceChip("Gems", "1320", new Color(220, 70, 90)));
-        center.add(RPGHelperTheme.footerResourceChip("Blue", "9", new Color(80, 150, 255)));
-        center.add(RPGHelperTheme.footerResourceChip("Void", "3", new Color(180, 90, 230)));
-        center.add(RPGHelperTheme.footerResourceChip("Sacred", "25", new Color(235, 175, 50)));
+        center.add(createFooterResourceChip("Energy", "845/130", new Color(77, 196, 104)));
+        center.add(createFooterResourceChip("Silver", "27.48M", new Color(180, 185, 195)));
+        center.add(createFooterResourceChip("Gems", "1320", new Color(220, 70, 90)));
+        center.add(createFooterResourceChip("Blue", "9", new Color(80, 150, 255)));
+        center.add(createFooterResourceChip("Void", "3", new Color(180, 90, 230)));
+        center.add(createFooterResourceChip("Sacred", "25", new Color(235, 175, 50)));
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
@@ -174,7 +175,9 @@ public class RPGHelperPrototype extends JFrame {
     }
 
     public void refreshDebugData() {
-        homePanel.refreshResources();
+        GameResourceSnapshot snapshot = resourceReader.readSnapshot();
+        homePanel.refreshResources(snapshot);
+        refreshFooterResources(snapshot);
         settingsPanel.refreshStatus();
         logFrame.refreshEntries();
         repaint();
@@ -240,6 +243,35 @@ public class RPGHelperPrototype extends JFrame {
 
     private String makeFooterTitle() {
         return "Client Readout:";
+    }
+
+    private JPanel createFooterResourceChip(String name, String initialValue, Color color) {
+        JPanel chip = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        chip.setOpaque(true);
+        chip.setBackground(RPGHelperTheme.PANEL);
+        chip.setBorder(new CompoundBorder(
+                new LineBorder(new Color(72, 88, 118), 1, true),
+                new EmptyBorder(4, 8, 4, 8)
+        ));
+
+        JLabel icon = new JLabel(RPGHelperTheme.createBadgeIcon(name.substring(0, Math.min(2, name.length())).toUpperCase(), color, 18, 18));
+        JLabel text = new JLabel(name + " " + initialValue);
+        text.setForeground(RPGHelperTheme.TEXT);
+        text.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        footerResourceLabels.put(name, text);
+
+        chip.add(icon);
+        chip.add(text);
+        return chip;
+    }
+
+    private void refreshFooterResources(GameResourceSnapshot snapshot) {
+        footerResourceLabels.get("Energy").setText("Energy " + snapshot.getEnergy());
+        footerResourceLabels.get("Silver").setText("Silver " + snapshot.getSilver());
+        footerResourceLabels.get("Gems").setText("Gems " + snapshot.getGems());
+        footerResourceLabels.get("Blue").setText("Blue " + snapshot.getBlueShards());
+        footerResourceLabels.get("Void").setText("Void " + snapshot.getVoidShards());
+        footerResourceLabels.get("Sacred").setText("Sacred " + snapshot.getSacredShards());
     }
 
     public static void main(String[] args) {

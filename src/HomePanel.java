@@ -287,7 +287,10 @@ public class HomePanel extends JPanel {
     }
 
     public void refreshResources() {
-        GameResourceSnapshot snapshot = resourceReader.readSnapshot();
+        refreshResources(resourceReader.readSnapshot());
+    }
+
+    public void refreshResources(GameResourceSnapshot snapshot) {
         resourceValueLabels.get("Energy").setText(snapshot.getEnergy());
         resourceValueLabels.get("Blue Shards").setText(snapshot.getBlueShards());
         resourceValueLabels.get("Void Shards").setText(snapshot.getVoidShards());
