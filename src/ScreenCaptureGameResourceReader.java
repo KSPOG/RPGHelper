@@ -298,7 +298,13 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
     }
 
     private String extractShardCount(String text) {
-        Matcher matcher = Pattern.compile("(\\d{1,5})").matcher(text == null ? "" : text);
+        String normalized = text == null ? "" : text.trim();
+        String lower = normalized.toLowerCase();
+        if (lower.contains("shard") || lower.contains("rare") || lower.contains("epic") || lower.contains("legendary") || lower.contains("mythical")) {
+            return null;
+        }
+
+        Matcher matcher = Pattern.compile("(\\d{1,5})").matcher(normalized);
         while (matcher.find()) {
             int value = safeParseNumber(matcher.group(1));
             if (value >= 0 && value < 100000) {

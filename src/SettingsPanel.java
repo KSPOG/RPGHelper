@@ -137,10 +137,10 @@ public class SettingsPanel extends JPanel {
                 });
             }
         }));
-        panel.add(createCalibrationRow("Blue Shards", blueShardRegionLabel, new Runnable() {
+        panel.add(createCalibrationRow("Ancient Shards", blueShardRegionLabel, new Runnable() {
             @Override
             public void run() {
-                startCalibration("Blue Shards", new ScreenRegionSelectionListener() {
+                startCalibration("Ancient Shards", new ScreenRegionSelectionListener() {
                     @Override
                     public void onRegionSelected(ScreenRegion region) {
                         settings.setBlueShardRegion(region);

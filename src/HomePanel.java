@@ -231,7 +231,7 @@ public class HomePanel extends JPanel {
 
         panel.add(createTrackedResourceLine("Energy", "845 / 130", "EN", new Color(77, 196, 104)));
         panel.add(RPGHelperTheme.divider());
-        panel.add(createTrackedResourceLine("Blue Shards", "9", "B", new Color(80, 150, 255)));
+        panel.add(createTrackedResourceLine("Ancient Shards", "9", "A", new Color(80, 150, 255)));
         panel.add(createTrackedResourceLine("Void Shards", "3", "V", new Color(180, 90, 230)));
         panel.add(createTrackedResourceLine("Sacred Shards", "25", "S", new Color(235, 175, 50)));
         panel.add(RPGHelperTheme.divider());
@@ -301,7 +301,7 @@ public class HomePanel extends JPanel {
 
     public void refreshResources(GameResourceSnapshot snapshot) {
         resourceValueLabels.get("Energy").setText(snapshot.getEnergy());
-        resourceValueLabels.get("Blue Shards").setText(snapshot.getBlueShards());
+        resourceValueLabels.get("Ancient Shards").setText(snapshot.getBlueShards());
         resourceValueLabels.get("Void Shards").setText(snapshot.getVoidShards());
         resourceValueLabels.get("Sacred Shards").setText(snapshot.getSacredShards());
         resourceValueLabels.get("Silver").setText(snapshot.getSilver());

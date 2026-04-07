@@ -51,7 +51,7 @@ public class DebugHotfixFrame extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         addResourceField(panel, "Energy", debugReader.readSnapshot().getEnergy());
-        addResourceField(panel, "Blue Shards", debugReader.readSnapshot().getBlueShards());
+        addResourceField(panel, "Ancient Shards", debugReader.readSnapshot().getBlueShards());
         addResourceField(panel, "Void Shards", debugReader.readSnapshot().getVoidShards());
         addResourceField(panel, "Sacred Shards", debugReader.readSnapshot().getSacredShards());
         addResourceField(panel, "Silver", debugReader.readSnapshot().getSilver());
@@ -101,7 +101,7 @@ public class DebugHotfixFrame extends JFrame {
     private void resetFields() {
         GameResourceSnapshot demo = GameResourceSnapshot.demo();
         resourceFields.get("Energy").setText(demo.getEnergy());
-        resourceFields.get("Blue Shards").setText(demo.getBlueShards());
+        resourceFields.get("Ancient Shards").setText(demo.getBlueShards());
         resourceFields.get("Void Shards").setText(demo.getVoidShards());
         resourceFields.get("Sacred Shards").setText(demo.getSacredShards());
         resourceFields.get("Silver").setText(demo.getSilver());
@@ -111,7 +111,7 @@ public class DebugHotfixFrame extends JFrame {
     private void applyHotfix() {
         debugReader.updateSnapshot(
                 resourceFields.get("Energy").getText().trim(),
-                resourceFields.get("Blue Shards").getText().trim(),
+                resourceFields.get("Ancient Shards").getText().trim(),
                 resourceFields.get("Void Shards").getText().trim(),
                 resourceFields.get("Sacred Shards").getText().trim(),
                 resourceFields.get("Silver").getText().trim(),

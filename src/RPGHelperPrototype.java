@@ -55,7 +55,7 @@ public class RPGHelperPrototype extends JFrame {
     private void registerScreens() {
         screenContainer.setOpaque(false);
         screenContainer.add(homePanel, "Home");
-        screenContainer.add(new AutoFarmPanel(), "Auto-Farm");
+        screenContainer.add(new AutoFarmPanel(logService), "Auto-Farm");
         screenContainer.add(new ChampionUpgradesPanel(), "Champion Upgrades");
         screenContainer.add(new ForgePanel(), "Forge");
         screenContainer.add(new QuestsEventPanel(), "Quests / Event");
@@ -142,7 +142,7 @@ public class RPGHelperPrototype extends JFrame {
         center.add(createFooterResourceChip("Energy", "845/130", new Color(77, 196, 104)));
         center.add(createFooterResourceChip("Silver", "27.48M", new Color(180, 185, 195)));
         center.add(createFooterResourceChip("Gems", "1320", new Color(220, 70, 90)));
-        center.add(createFooterResourceChip("Blue", "9", new Color(80, 150, 255)));
+        center.add(createFooterResourceChip("Ancient", "9", new Color(80, 150, 255)));
         center.add(createFooterResourceChip("Void", "3", new Color(180, 90, 230)));
         center.add(createFooterResourceChip("Sacred", "25", new Color(235, 175, 50)));
 
@@ -269,7 +269,7 @@ public class RPGHelperPrototype extends JFrame {
         footerResourceLabels.get("Energy").setText("Energy " + snapshot.getEnergy());
         footerResourceLabels.get("Silver").setText("Silver " + snapshot.getSilver());
         footerResourceLabels.get("Gems").setText("Gems " + snapshot.getGems());
-        footerResourceLabels.get("Blue").setText("Blue " + snapshot.getBlueShards());
+        footerResourceLabels.get("Ancient").setText("Ancient " + snapshot.getBlueShards());
         footerResourceLabels.get("Void").setText("Void " + snapshot.getVoidShards());
         footerResourceLabels.get("Sacred").setText("Sacred " + snapshot.getSacredShards());
     }
