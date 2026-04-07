@@ -251,8 +251,15 @@ public class HomePanel extends JPanel {
         syncButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         RPGHelperTheme.styleSecondaryButton(syncButton);
         syncButton.addActionListener(event -> {
-            refreshResources();
-            logService.log("Synced resources from the current game reader.");
+            GameResourceSnapshot snapshot = refreshResources();
+            logService.log(
+                    "Reading all current resources: Energy=" + snapshot.getEnergy()
+                            + ", Silver=" + snapshot.getSilver()
+                            + ", Gems=" + snapshot.getGems()
+                            + ", Blue Shards=" + snapshot.getBlueShards()
+                            + ", Void Shards=" + snapshot.getVoidShards()
+                            + ", Sacred Shards=" + snapshot.getSacredShards()
+            );
         });
         panel.add(syncButton);
         panel.add(Box.createVerticalGlue());
@@ -286,8 +293,10 @@ public class HomePanel extends JPanel {
         return row;
     }
 
-    public void refreshResources() {
-        refreshResources(resourceReader.readSnapshot());
+    public GameResourceSnapshot refreshResources() {
+        GameResourceSnapshot snapshot = resourceReader.readSnapshot();
+        refreshResources(snapshot);
+        return snapshot;
     }
 
     public void refreshResources(GameResourceSnapshot snapshot) {

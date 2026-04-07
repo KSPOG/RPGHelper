@@ -46,7 +46,14 @@ public class SettingsPanel extends JPanel {
 
         setOpaque(false);
         setLayout(new BorderLayout(14, 14));
-        add(createRaidClientPanel(), BorderLayout.CENTER);
+
+        JScrollPane scrollPane = new JScrollPane(createRaidClientPanel());
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setOpaque(false);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     private JComponent createRaidClientPanel() {
