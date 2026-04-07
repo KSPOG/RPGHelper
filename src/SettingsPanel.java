@@ -18,9 +18,15 @@ public class SettingsPanel extends JPanel {
     private final JLabel energyRegionLabel = new JLabel();
     private final JLabel silverRegionLabel = new JLabel();
     private final JLabel gemsRegionLabel = new JLabel();
+    private final JLabel blueShardRegionLabel = new JLabel();
+    private final JLabel voidShardRegionLabel = new JLabel();
+    private final JLabel sacredShardRegionLabel = new JLabel();
     private final JLabel energyTestLabel = new JLabel();
     private final JLabel silverTestLabel = new JLabel();
     private final JLabel gemsTestLabel = new JLabel();
+    private final JLabel blueShardTestLabel = new JLabel();
+    private final JLabel voidShardTestLabel = new JLabel();
+    private final JLabel sacredShardTestLabel = new JLabel();
     private final JLabel calibrationSummaryLabel = new JLabel();
 
     public SettingsPanel(
@@ -124,6 +130,45 @@ public class SettingsPanel extends JPanel {
                 });
             }
         }));
+        panel.add(createCalibrationRow("Blue Shards", blueShardRegionLabel, new Runnable() {
+            @Override
+            public void run() {
+                startCalibration("Blue Shards", new ScreenRegionSelectionListener() {
+                    @Override
+                    public void onRegionSelected(ScreenRegion region) {
+                        settings.setBlueShardRegion(region);
+                        blueShardRegionLabel.setText(formatRegion(region));
+                        persistCalibration("blue shards");
+                    }
+                });
+            }
+        }));
+        panel.add(createCalibrationRow("Void Shards", voidShardRegionLabel, new Runnable() {
+            @Override
+            public void run() {
+                startCalibration("Void Shards", new ScreenRegionSelectionListener() {
+                    @Override
+                    public void onRegionSelected(ScreenRegion region) {
+                        settings.setVoidShardRegion(region);
+                        voidShardRegionLabel.setText(formatRegion(region));
+                        persistCalibration("void shards");
+                    }
+                });
+            }
+        }));
+        panel.add(createCalibrationRow("Sacred Shards", sacredShardRegionLabel, new Runnable() {
+            @Override
+            public void run() {
+                startCalibration("Sacred Shards", new ScreenRegionSelectionListener() {
+                    @Override
+                    public void onRegionSelected(ScreenRegion region) {
+                        settings.setSacredShardRegion(region);
+                        sacredShardRegionLabel.setText(formatRegion(region));
+                        persistCalibration("sacred shards");
+                    }
+                });
+            }
+        }));
         panel.add(Box.createVerticalStrut(16));
 
         JPanel calibrationTestRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -140,6 +185,9 @@ public class SettingsPanel extends JPanel {
         panel.add(buildDebugLine("Energy OCR", energyTestLabel));
         panel.add(buildDebugLine("Silver OCR", silverTestLabel));
         panel.add(buildDebugLine("Gems OCR", gemsTestLabel));
+        panel.add(buildDebugLine("Blue OCR", blueShardTestLabel));
+        panel.add(buildDebugLine("Void OCR", voidShardTestLabel));
+        panel.add(buildDebugLine("Sacred OCR", sacredShardTestLabel));
         calibrationSummaryLabel.setForeground(RPGHelperTheme.MUTED);
         calibrationSummaryLabel.setFont(RPGHelperTheme.SMALL);
         calibrationSummaryLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -185,6 +233,9 @@ public class SettingsPanel extends JPanel {
         energyRegionLabel.setText(formatRegion(settings.getEnergyRegion()));
         silverRegionLabel.setText(formatRegion(settings.getSilverRegion()));
         gemsRegionLabel.setText(formatRegion(settings.getGemsRegion()));
+        blueShardRegionLabel.setText(formatRegion(settings.getBlueShardRegion()));
+        voidShardRegionLabel.setText(formatRegion(settings.getVoidShardRegion()));
+        sacredShardRegionLabel.setText(formatRegion(settings.getSacredShardRegion()));
         refreshStatus();
         return panel;
     }
@@ -272,8 +323,11 @@ public class SettingsPanel extends JPanel {
         energyTestLabel.setText(result.getEnergyValue() + " | raw: " + result.getEnergyRawText());
         silverTestLabel.setText(result.getSilverValue() + " | raw: " + result.getSilverRawText());
         gemsTestLabel.setText(result.getGemsValue() + " | raw: " + result.getGemsRawText());
+        blueShardTestLabel.setText(result.getBlueShardsValue() + " | raw: " + result.getBlueShardsRawText());
+        voidShardTestLabel.setText(result.getVoidShardsValue() + " | raw: " + result.getVoidShardsRawText());
+        sacredShardTestLabel.setText(result.getSacredShardsValue() + " | raw: " + result.getSacredShardsRawText());
         calibrationSummaryLabel.setText(result.getSourceSummary());
-        logService.log("Ran calibration test for energy, silver, and gems.");
+        logService.log("Ran calibration test for resources and shards.");
     }
 
     private void saveSettings() {

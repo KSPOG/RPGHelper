@@ -57,9 +57,9 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
 
             GameResourceSnapshot snapshot = new GameResourceSnapshot(
                     chooseValue(parsedHudValues.energy, fallback.getEnergy(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getEnergy()),
-                    fallback.getBlueShards(),
-                    fallback.getVoidShards(),
-                    fallback.getSacredShards(),
+                    chooseValue(parsedHudValues.blueShards, fallback.getBlueShards(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getBlueShards()),
+                    chooseValue(parsedHudValues.voidShards, fallback.getVoidShards(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getVoidShards()),
+                    chooseValue(parsedHudValues.sacredShards, fallback.getSacredShards(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getSacredShards()),
                     chooseValue(parsedHudValues.silver, fallback.getSilver(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getSilver()),
                     chooseValue(parsedHudValues.gems, fallback.getGems(), lastGoodSnapshot == null ? null : lastGoodSnapshot.getGems()),
                     parsedHudValues.sourceText
@@ -70,9 +70,9 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         } catch (Exception exception) {
             return new GameResourceSnapshot(
                     lastGoodSnapshot != null ? lastGoodSnapshot.getEnergy() : fallback.getEnergy(),
-                    fallback.getBlueShards(),
-                    fallback.getVoidShards(),
-                    fallback.getSacredShards(),
+                    lastGoodSnapshot != null ? lastGoodSnapshot.getBlueShards() : fallback.getBlueShards(),
+                    lastGoodSnapshot != null ? lastGoodSnapshot.getVoidShards() : fallback.getVoidShards(),
+                    lastGoodSnapshot != null ? lastGoodSnapshot.getSacredShards() : fallback.getSacredShards(),
                     lastGoodSnapshot != null ? lastGoodSnapshot.getSilver() : fallback.getSilver(),
                     lastGoodSnapshot != null ? lastGoodSnapshot.getGems() : fallback.getGems(),
                     "OCR failed: " + exception.getMessage()
@@ -90,10 +90,22 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
                     shorten(parsed.silverRawText, 120),
                     valueOrUnknown(parsed.gems),
                     shorten(parsed.gemsRawText, 120),
+                    valueOrUnknown(parsed.blueShards),
+                    shorten(parsed.blueShardsRawText, 120),
+                    valueOrUnknown(parsed.voidShards),
+                    shorten(parsed.voidShardsRawText, 120),
+                    valueOrUnknown(parsed.sacredShards),
+                    shorten(parsed.sacredShardsRawText, 120),
                     parsed.sourceText
             );
         } catch (Exception exception) {
             return new CalibratedResourceReadResult(
+                    "?",
+                    "Error: " + exception.getMessage(),
+                    "?",
+                    "Error: " + exception.getMessage(),
+                    "?",
+                    "Error: " + exception.getMessage(),
                     "?",
                     "Error: " + exception.getMessage(),
                     "?",
@@ -144,6 +156,27 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
             parsed.gemsRawText = gemsText;
             parsed.gems = extractGems(gemsText);
             sourceParts.add("gems=" + valueOrUnknown(parsed.gems));
+        }
+
+        if (settings.getBlueShardRegion() != null) {
+            String blueText = windowsOcrService.readText(robot.createScreenCapture(settings.getBlueShardRegion().toRectangle()));
+            parsed.blueShardsRawText = blueText;
+            parsed.blueShards = extractShardCount(blueText);
+            sourceParts.add("blue=" + valueOrUnknown(parsed.blueShards));
+        }
+
+        if (settings.getVoidShardRegion() != null) {
+            String voidText = windowsOcrService.readText(robot.createScreenCapture(settings.getVoidShardRegion().toRectangle()));
+            parsed.voidShardsRawText = voidText;
+            parsed.voidShards = extractShardCount(voidText);
+            sourceParts.add("void=" + valueOrUnknown(parsed.voidShards));
+        }
+
+        if (settings.getSacredShardRegion() != null) {
+            String sacredText = windowsOcrService.readText(robot.createScreenCapture(settings.getSacredShardRegion().toRectangle()));
+            parsed.sacredShardsRawText = sacredText;
+            parsed.sacredShards = extractShardCount(sacredText);
+            sourceParts.add("sacred=" + valueOrUnknown(parsed.sacredShards));
         }
 
         parsed.sourceText = sourceParts.isEmpty()
@@ -264,6 +297,17 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         return null;
     }
 
+    private String extractShardCount(String text) {
+        Matcher matcher = Pattern.compile("(\\d{1,5})").matcher(text == null ? "" : text);
+        while (matcher.find()) {
+            int value = safeParseNumber(matcher.group(1));
+            if (value >= 0 && value < 100000) {
+                return Integer.toString(value);
+            }
+        }
+        return null;
+    }
+
     private String chooseValue(String primary, String fallback, String cached) {
         if (primary != null && !primary.trim().isEmpty()) {
             return primary;
@@ -336,10 +380,16 @@ public class ScreenCaptureGameResourceReader implements GameResourceReader {
         private String silverRawText;
         private String gems;
         private String gemsRawText;
+        private String blueShards;
+        private String blueShardsRawText;
+        private String voidShards;
+        private String voidShardsRawText;
+        private String sacredShards;
+        private String sacredShardsRawText;
         private String sourceText;
 
         private boolean hasAnyValue() {
-            return energy != null || silver != null || gems != null;
+            return energy != null || silver != null || gems != null || blueShards != null || voidShards != null || sacredShards != null;
         }
     }
 }

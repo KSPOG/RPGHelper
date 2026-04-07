@@ -13,6 +13,9 @@ public class AppSettingsStore {
     private static final String ENERGY_REGION = "raid.region.energy";
     private static final String SILVER_REGION = "raid.region.silver";
     private static final String GEMS_REGION = "raid.region.gems";
+    private static final String BLUE_SHARD_REGION = "raid.region.blueShard";
+    private static final String VOID_SHARD_REGION = "raid.region.voidShard";
+    private static final String SACRED_SHARD_REGION = "raid.region.sacredShard";
     private static final Path LEGACY_SETTINGS_FILE = Paths.get(System.getProperty("user.home"), ".rpg-helper.properties");
 
     public AppSettings load() {
@@ -30,6 +33,9 @@ public class AppSettingsStore {
             settings.setEnergyRegion(ScreenRegion.parse(properties.getProperty(ENERGY_REGION, "")));
             settings.setSilverRegion(ScreenRegion.parse(properties.getProperty(SILVER_REGION, "")));
             settings.setGemsRegion(ScreenRegion.parse(properties.getProperty(GEMS_REGION, "")));
+            settings.setBlueShardRegion(ScreenRegion.parse(properties.getProperty(BLUE_SHARD_REGION, "")));
+            settings.setVoidShardRegion(ScreenRegion.parse(properties.getProperty(VOID_SHARD_REGION, "")));
+            settings.setSacredShardRegion(ScreenRegion.parse(properties.getProperty(SACRED_SHARD_REGION, "")));
         } catch (IOException ignored) {
         }
 
@@ -43,6 +49,9 @@ public class AppSettingsStore {
         properties.setProperty(ENERGY_REGION, serializeRegion(settings.getEnergyRegion()));
         properties.setProperty(SILVER_REGION, serializeRegion(settings.getSilverRegion()));
         properties.setProperty(GEMS_REGION, serializeRegion(settings.getGemsRegion()));
+        properties.setProperty(BLUE_SHARD_REGION, serializeRegion(settings.getBlueShardRegion()));
+        properties.setProperty(VOID_SHARD_REGION, serializeRegion(settings.getVoidShardRegion()));
+        properties.setProperty(SACRED_SHARD_REGION, serializeRegion(settings.getSacredShardRegion()));
         Path settingsFile = getSettingsFilePath();
 
         Files.createDirectories(settingsFile.getParent());
